@@ -22,5 +22,7 @@ Route::middleware('auth:api')->group(function () {
         Route::post('{id}/restore', [CategoryController::class, 'restore']); // Optional restore
     });
 
+    Route::apiResource('expenses', \App\Http\Controllers\Api\ExpenseController::class);
+
 
 });
