@@ -4,12 +4,20 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Resources\ExpenseResource;
 use App\Models\Expense;
+use App\Services\FirebaseNotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class ExpenseController extends BaseController
 {
+    protected $fcm;
+
+    public function __construct(FirebaseNotificationService $fcm)
+    {
+        $this->fcm = $fcm;
+    }
+
     public function index()
     {
         $expenses = Expense::with(['category', 'creator'])->get();
@@ -20,9 +28,9 @@ class ExpenseController extends BaseController
     {
         $validator = $this->validateRequest($request, [
             'category_id' => 'required|exists:categories,id',
-            'amount'      => 'required|numeric|min:0',
-            'quantity'    => 'required|integer|min:1',
-            'date'        => 'required|date',
+            'amount' => 'required|numeric|min:0',
+            'quantity' => 'required|integer|min:1',
+            'date' => 'required|date',
             'description' => 'nullable|string',
         ]);
 
@@ -34,19 +42,35 @@ class ExpenseController extends BaseController
         try {
             $expense = Expense::create([
                 'category_id' => $request->category_id,
-                'amount'      => $request->amount,
-                'quantity'    => $request->quantity,
-                'date'        => $request->date,
+                'amount' => $request->amount,
+                'quantity' => $request->quantity,
+                'date' => $request->date,
                 'description' => $request->description,
-                'created_by'  => auth()->id(),
+                'created_by' => auth()->id(),
             ]);
+
+            $user = auth()->user();
+
+
+            if ($user && $user->device_token) {
+                $this->fcm->sendToDevice(
+                    $user->device_token,
+                    'Expense Created',
+                    'A new expense has been added.',
+                    [
+                        'expense_id' => $expense->id,
+                        'amount' => $expense->amount,
+                    ]
+                );
+            }
+
 
             DB::commit();
             return $this->sendResponse(new ExpenseResource($expense), 'Expense created successfully.');
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Expense Store Error: ' . $e->getMessage());
-            return $this->sendError('Failed to create expense.'. $e->getMessage());
+            return $this->sendError('Failed to create expense.' . $e->getMessage());
         }
     }
 
@@ -72,9 +96,9 @@ class ExpenseController extends BaseController
 
         $validator = $this->validateRequest($request, [
             'category_id' => 'required|exists:categories,id',
-            'amount'      => 'required|numeric|min:0',
-            'quantity'    => 'required|integer|min:1',
-            'date'        => 'required|date',
+            'amount' => 'required|numeric|min:0',
+            'quantity' => 'required|integer|min:1',
+            'date' => 'required|date',
             'description' => 'nullable|string',
         ]);
 

@@ -41,10 +41,12 @@ class AuthController extends BaseController
             return $this->sendError('Validation Error.', $validator->errors());
         }
 
+
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
+            'device_token' => $request->device_token,
         ]);
 
         // Assign Role
@@ -65,6 +67,13 @@ class AuthController extends BaseController
             return response()->json(['error' => 'Unauthorized'], 401);
 
         $user = Auth::user();
+
+         // Save FCM token if not already saved
+        if ($request->filled('device_token') && $user->device_token !== $request->device_token) {
+            $user->device_token = $request->device_token;
+            $user->save();
+        }
+
         $token = $user->createToken('API Token')->accessToken;
 
         return $this->sendResponse([

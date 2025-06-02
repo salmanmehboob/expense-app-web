@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Services\FirebaseNotificationService;
+use App\Services\FirebaseService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Symfony\Component\HttpFoundation\Response;
@@ -60,5 +62,21 @@ class BaseController extends Controller
     {
         return Validator::make($request->all(), $rules, $messages);
     }
+
+
+//    protected function sendPushNotification(FirebaseService $firebase)
+//    {
+//        $token = 'DEVICE_TOKEN'; // You should get this from user/device
+//        $title = 'Hello!';
+//        $body = 'You have a new message.';
+//        $data = [
+//            'custom_key' => 'custom_value'
+//        ];
+//
+//        $response = $firebase->sendNotification($token, $title, $body, $data);
+//
+//        return response()->json($response);
+//    }
+
 
 }
